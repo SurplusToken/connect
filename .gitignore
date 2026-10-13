@@ -1,0 +1,52 @@
+# Local reference clones and research downloads
+/.references/
+/tmp/
+/temp/
+
+# Go build, test and profiling output
+/bin/
+/dist/
+/build/bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.prof
+coverage.out
+coverage.html
+/coverage/
+/go.work
+/go.work.sum
+
+# Frontend dependencies and generated assets
+node_modules/
+/frontend/dist/
+/frontend/wailsjs/
+.vite/
+*.tsbuildinfo
+
+# Local secrets, runtime state and configuration backups
+.env
+.env.*
+!.env.example
+!.env.*.example
+/secrets/
+/credentials/
+/backups/
+/logs/
+*.log
+*.local
+
+# Editor and operating-system files
+.DS_Store
+._*
+Thumbs.db
+Desktop.ini
+.idea/
+*.swp
+*.swo
+*~
+
+# Keep Go/frontend lockfiles and build platform resources tracked.
