@@ -16,7 +16,7 @@
 ## 打开对比
 
 - 旧版预览：http://127.0.0.1:5174/ （已启动本地静态服务器）
-- Kumo 预览：http://127.0.0.1:5173/ （当前开发服务器）
+- Kumo 预览：http://127.0.0.1:5173/ （当次预览地址，不保证当前运行）
 - 旧版应用：`.references/comparison/baseline/SurplusToken Connect.app`
 - Kumo 应用：`.references/comparison/kumo/SurplusToken Connect.app`
 - 各目录同时保留 frontend-dist 与 ZIP；旧版为可运行产物快照，不是独立源码分支。
@@ -26,7 +26,7 @@
 
 Kumo 版完整迁移到 React，选择器、分段 Tabs、复选框、按钮、输入框和对话框采用组件库。模式切换不再增删勾号，固定文字和按钮尺寸。检查模型选择、键盘打开菜单、Escape 及弹窗返回焦点；589px 视口无横向溢出。macOS 包完成构建，尚未测启动时间、常驻内存与 Windows 包大小。
 
-两版都只包含 UI 原型，不会执行客户端启动或配置写入。当前数据不能代表完整产品最终体积。
+本次比较的两版构建都只包含 UI 原型，不会执行客户端启动或配置写入。这是 2026-10-13 UI 阶段的体积快照；当前工程已接入 API 与配置写入，需重新构建测量，不能将表中数据当作当前包或最终产品体积。
 
 ![旧版](screenshots/baseline.jpg)
 

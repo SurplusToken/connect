@@ -13,7 +13,7 @@ Claude 与 Kimi 使用 `-color` 版本，保留 SVG 原始色彩；Kimi 白色�
 
 旧版备份使用 Lucide；当前 Kumo 版已改为 Phosphor 通用图标。依赖许可副本在 `frontend/public/licenses/`。
 
-- Wails / @wailsio/runtime 3.0.0-beta.28：MIT，https://github.com/wailsapp/wails 。前后端 runtime 保持同版本。
+- Wails v3 Go 模块 v3.0.0-alpha.63 / @wailsio/runtime 3.0.0-beta.28：MIT，https://github.com/wailsapp/wails 。版本分别以 go.mod 与 frontend/package-lock.json 为准；当前版本号不同，升级时核对原生桥接兼容性。
 
 ## Go 配置编辑与写入新增依赖
 

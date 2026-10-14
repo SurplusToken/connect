@@ -86,10 +86,10 @@ Codex 接入仅针对编程功能，不意味着替换 ChatGPT 普通聊天后�
 
 ## 技术架构
 
-采用 Go 负责核心逻辑，Wails v3 提供桌面窗口与 Go/前端桥接；前端采用 React + TypeScript + Vite，组件使用 Kumo 2.14.0。CLI 与 GUI 共享 Go 应用服务。
+采用 Go 负责核心逻辑，Wails v3 提供桌面窗口与 Go/前端桥接；前端采用 React + TypeScript + Vite，组件使用 Kumo 2.14.0。原生 GUI 与开发 HTTP API 共享 Go 应用服务；面向用户的 CLI 和 Launcher 尚未实现。
 
 ```text
-Wails v3 GUI / CLI
+Wails v3 GUI / 开发 HTTP API
         │
         ▼
 Go application services
@@ -98,26 +98,27 @@ Go application services
   ├── Discovery：可执行文件、版本、配置目录
   ├── Adapters：各客户端协议、配置和启动方式
   ├── Config：预览、备份、合并、应用、恢复
-  └── Launcher：进程环境、终端启动、退出清理
+  └── Launcher（规划）：进程环境、终端启动、退出清理
 
 AI 编程客户端 ── 直接请求 ── SurplusToken / Sub2API
 ```
 
-代码组织方向（当前仅有桌面入口与 frontend，其余按功能逐步建立）：
+当前代码组织：
 
 ```text
-cmd/connect/          CLI 入口
-frontend/             Wails 前端
-internal/app/         GUI / CLI 共享用例
-internal/gateway/     Sub2API 登录、令牌与 Key API 集成
-internal/credentials/ 凭据存取与脱敏
-internal/clients/     每个客户端一个适配器
-internal/config/      配置变更与恢复
-internal/launcher/    跨平台进程和终端启动
-docs/                 调研与设计
+main.go                 Wails 桌面入口与 Go Service 注册
+cmd/connect-dev/        开发 HTTP API 与离线夹具入口
+frontend/               React / Wails 前端
+internal/gateway/       Sub2API 登录、令牌与 Key API 集成
+internal/httpapi/       请求处理、原生桥接与客户端配置适配
+internal/sessionstore/  系统凭据库
+internal/discovery/     客户端发现与版本检测
+internal/configedit/    JSON/JSONC 局部编辑
+internal/configuration/ 配置规划、备份、应用与恢复
+docs/                   调研、设计与实现记录
 ```
 
-适配器分别提供探测、配置规划、应用、恢复、临时启动能力。只生成启动方案的逻辑不依赖 Wails、终端交互或磁盘写入，以便单独验证。
+适配器规划覆盖探测、配置规划、应用、恢复和临时启动；当前已开放的永久配置能力见下方开发路线。只生成启动方案的逻辑不依赖 Wails、终端交互或磁盘写入，以便单独验证。
 
 ### 配置与凭据原则
 
@@ -140,7 +141,7 @@ docs/                 调研与设计
 
 ## 开发准备与参考源码
 
-本机已验证 Go 1.27.2、Node.js 24.12.0；框架固定为 **Wails v3.0.0-beta.28**（Beta），前端为 React + TypeScript + Vite。本工程 macOS 编译部署目标为 13.0（不代表已验证最低系统上的 WebKit / Kumo 兼容性），需要 Xcode 开发工具，Windows 构建需要相应的 C 工具链与 WebView2；本轮只验证 macOS 构建。
+本机已验证 Go 1.27.2、Node.js 24.12.0；当前采用 **Wails v3**，Go 模块锁定 `v3.0.0-alpha.63`（`go.mod`），前端 `@wailsio/runtime` 锁定 `3.0.0-beta.28`（`frontend/package-lock.json`）；两者版本号不同，升级时需核对桥接 API 并验证原生调用，前端为 React + TypeScript + Vite。本工程 macOS 编译部署目标为 13.0（不代表已验证最低系统上的 WebKit / Kumo 兼容性），需要 Xcode 开发工具，Windows 构建需要相应的 C 工具链与 WebView2；本轮只验证 macOS 构建。
 
 ```sh
 # 安装依赖
@@ -195,4 +196,4 @@ git clone --depth 1 https://github.com/TokenFlux/tf-cli.git .references/tf-cli
 
 Wails 外壳审计、已修复项与发行前缺项见 [Wails 排查报告](docs/wails-audit.md)。
 
-实际功能接入前的方案见 [配置与恢复流程](docs/configuration-workflows.md) 和 [Codex / Desktop 适配](docs/codex-desktop-adaptation.md)。
+配置与适配的设计方案见 [配置与恢复流程](docs/configuration-workflows.md) 和 [Codex / Desktop 适配](docs/codex-desktop-adaptation.md)。
