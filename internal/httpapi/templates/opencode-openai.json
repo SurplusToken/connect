@@ -1,0 +1,9 @@
+{
+  "name": "SurplusToken",
+  "canonical": "openai",
+  "package": "@opencode/ai/providers/openai-compatible/responses",
+  "settings": {
+    "baseURL": "https://surplustoken.com/v1",
+    "transport": "http"
+  }
+}

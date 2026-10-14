@@ -2,11 +2,13 @@
 
 使用 **Go + Wails v3** 构建的轻量桌面接入助手，将基于 Sub2API 的 SurplusToken 网关连接到用户已有的 AI 编程客户端。
 
-目标体验：**登录网关 → 获取或创建 API Key → 选择客户端与模型 → 临时启动或永久配置。**
+目标体验：**登录网关 → 获取或创建 API Key → 选择客户端与 Key → 临时启动或永久配置。**
 
-> 当前已完成可运行的中文界面预览，使用 Wails v3.0.0-beta.28。登录 API、客户端检测、真实模型发现、启动和配置写入尚未接入；界面不会执行这些操作。首批目标平台为 Windows 与 macOS。
+> 当前已接入 SurplusToken 真实登录、用户资料、分组、Key 列表/创建和模型列表。首批永久配置适配器为 Claude Code 与 OpenCode v2，支持脱敏预览、私密备份、写入与按字段恢复；Codex 保持保护，oh-my-pi、Kimi 和临时终端启动待接入。macOS 构建和临时目录联调已验证，Windows 尚未实机验证。
 
-![客户端界面预览](docs/screenshots/clients.jpg)
+五种客户端已接入本机安装与版本检测，包含 GUI 常见安装路径补查、npm 包版本读取和限时版本探测。点击版本号查看详情，和配置适配状态独立展示。Codex 仅做被动安装元数据检查，同时展示 ChatGPT Desktop 应用版本，继续禁止启动或改写。详见 [本机客户端发现](docs/client-discovery.md) 和 [OpenCode v2 升级记录](docs/opencode-v2-migration.md)。
+
+![真实 API 接入界面](docs/screenshots/api-live.jpg)
 
 旧版与 Kumo 版均保留供对比，见 [界面与打包体积对比](docs/ui-comparison.md)。
 
@@ -37,7 +39,7 @@ SuSu 品牌原图与生成说明见 [品牌资源](assets/branding/README.md)，
 
 ## 目标客户端
 
-以下均为待实现适配器。配置位置是调研入口，实际实现需识别版本、环境变量覆盖与自定义目录。
+下表为完整目标。当前只开放 Claude Code 和 OpenCode v2 的永久配置，其他能力仍待接入。配置位置是调研入口，实际实现需识别版本、环境变量覆盖与自定义目录。
 
 | 客户端 | 临时启动计划 | 永久配置计划 / 核实重点 |
 | --- | --- | --- |
@@ -54,17 +56,17 @@ Codex 接入仅针对编程功能，不意味着替换 ChatGPT 普通聊天后�
 
 ## 网关授权流程
 
-1. 用户确认网关地址（默认 `https://surplustoken.com`），输入账号密码。
+1. 首次打开输入账号密码，网关固定为 `https://surplustoken.com`。
 2. Connect 直接请求 `POST /api/v1/auth/login`，获取用户 access token；如需二次验证，按接口结果处理。
 3. 使用用户 Bearer token 查询用户信息、Key 列表与可用分组，复用合适的 Key；没有可用 Key 时按用户选择创建专用 Key。
 4. 使用推理 API Key 获取模型目录并检查权限，再选择客户端、模型与配置模式。
 5. 展示脱敏变更，应用永久配置或构造临时启动方案。
 
-首版不需要浏览器回调、loopback 服务或网关新增 Web Import 页面。账号密码仅用于登录，不保存到配置文件或日志；access token 默认仅在内存中使用。若后续支持保持登录，只将必要的 refresh token 存入操作系统凭据库，并处理过期、撤销与退出登录。
+首版不需要浏览器回调、loopback 服务或网关新增 Web Import 页面。账号密码仅用于登录，不保存到配置文件或日志；access token 仅在内存中使用。桌面版将 refresh token 存入操作系统凭据库，打开时自动交换新令牌，刷新轮换同步保存。过期或撤销后回到登录；暂时断网保留会话并允许重试。退出登录清除保存状态。
 
 面板用户 token 与推理 API Key 分开管理，前者不能注入模型客户端，也不需要管理员 Key。若已有 Key 无法再次取回完整值，应创建专用 Key 或让用户手动导入。
 
-2026-10-13 已用测试账号验证：登录、`GET /api/v1/user/profile`、`GET /api/v1/keys`、`GET /api/v1/groups/available` 均返回 200；当时 Key 列表为空，可用分组为 5 个。本次未创建 Key、未请求模型，也未把密码或返回的令牌写入仓库。Key 创建、刷新令牌及二次验证仍待联调。
+2026-10-13 已用测试账号验证登录、用户资料、Key 列表和五个可用分组，并经用户授权创建一个名为“SurplusToken Connect”的 Key。真实 `/v1/models` 初次返回余额不足，随后在原生应用中成功读取并显示 gpt-5.5；未发起推理请求。原生应用已验证完全退出再打开自动恢复登录，以及主动退出后重开回到登录页。二次验证通过接口夹具测试，尚未生产联调。密码、令牌和 Key 明文不写入仓库。
 
 ## 配置目录与隔离
 
@@ -76,7 +78,7 @@ Codex 接入仅针对编程功能，不意味着替换 ChatGPT 普通聊天后�
 | Claude Code | `CLAUDE_CONFIG_DIR` | 将用户配置、会话和插件迁移到指定目录；不自动排除项目或受管配置 |
 | Kimi Code | `KIMI_CODE_HOME` | 默认 `~/.kimi-code`；配置位于该目录的 `config.toml` |
 | oh-my-pi | `PI_CODING_AGENT_DIR` | 默认 `~/.omp/agent`；原生 agent 数据目录覆盖，但通用配置发现不是全部跟随此变量；命名 profile 会忽略它 |
-| OpenCode | `OPENCODE_CONFIG_DIR`、`OPENCODE_CONFIG`、`OPENCODE_CONFIG_CONTENT` | 分别指定配置目录、文件及内联 JSON；配置采用多层合并，凭据 `auth.json` 位于独立数据目录，不能只靠配置目录变量隔离 |
+| OpenCode v2 | `OPENCODE_CONFIG_DIR`、XDG 目录变量 | v2 已核对目录覆盖与多层合并；账户数据与配置分开，不能只靠配置目录变量隔离。v1 的文件/内联覆盖变量未当作 v2 接口使用 |
 
 来源与详细边界见 [调研文档](docs/prior-work.md#客户端目录变量与隔离边界)。适配器应分别记录配置目录、凭据位置、会话目录和项目配置来源；用户未选择隔离目录时，应尊重已有环境变量，不硬编码默认路径。永久模式写入用户实际使用的配置位置，避免写进只有 Connect 启动时才读取的目录。
 
@@ -128,10 +130,10 @@ docs/                 调研与设计
 
 ## 开发路线
 
-1. **基础闭环**：Wails v3 外壳、共享 Go 服务、手动 Key 导入、客户端发现、模型列表；先验证 Codex CLI 与 Claude Code 临时启动。
-2. **永久配置**：变更预览、受限备份、最小合并、恢复与冲突检测；准备 Codex Desktop 静态配置验证，运行验证遵守下述限制。
-3. **API 登录**：完成账号登录、分组选择、Key 复用/创建，以及令牌失效处理；不使用网页回调。
-4. **适配扩展**：OpenCode、oh-my-pi、Kimi Code；每个客户端分别验证两种模式。
+1. **已实现**：Wails v3 外壳、直接 API 登录、分组与 Key 复用/创建、模型列表接口、客户端发现。
+2. **首批永久配置**：Claude Code、OpenCode v2 的变更预览、受限备份、最小合并、恢复与冲突检测已通过隔离目录联调；真实推理待验收。
+3. **临时启动与适配扩展**：补齐终端承载、oh-my-pi、Kimi Code、其他客户端的两种模式。
+4. **Codex Desktop**：继续静态适配研究；运行验证须等用户解除当前保护限制。
 5. **发布**：Windows/macOS 安装包、签名与公证流程、升级策略，以及明确的客户端版本兼容表。
 
 适配器验收至少覆盖：不含秘密的配置夹具、未知字段保留、重复应用幂等、写入失败恢复、外部修改冲突、临时启动不改全局配置，以及目标操作系统上的实际客户端请求。静态配置检查不能替代桌面端联调。
@@ -145,7 +147,10 @@ docs/                 调研与设计
 npm --prefix frontend ci
 go mod download
 
-# 前端热更新预览（不调用原生功能）
+# 开发 API（一个终端，仅监听本机 43129）
+make api-dev
+
+# 前端热更新（另一个终端；/connect 请求经 Vite 转发到上述服务）
 npm --prefix frontend run dev
 
 # 编译桌面应用
@@ -161,7 +166,20 @@ make package-mac
 
 macOS 也可使用 `make run` 一步构建并启动；Windows 完成前端构建后使用 `go build -tags production -trimpath -o bin/surplustoken-connect.exe .`（本轮未验证）。当前无需全局安装 Wails CLI，尚未配置 Go 热重载和发行安装器。界面源码在 `frontend/src/`，桌面入口为 `main.go`。`build/` 平台资源纳入版本控制，`bin/` 和前端产物忽略。
 
-界面包含客户端选择、双模式切换、示例模型选择、方案预览、网关登录表单、配置记录空状态和设置。模型是明确标注的示例，安装状态为“未检测”；启动先显示独立登录页，只提供账号、密码与登录按钮；提交仅用于预览进入主界面的流程，不发送认证请求、不存储密码。左下角头像按钮打开账号弹层，显示昵称（API 提供时）、完整邮箱和退出登录；当前账号信息来自本次输入，不代表真实已认证身份。Codex 条目保持锁定。默认窗口为 880 × 640，最小 820 × 600，采用浅色侧栏、白色内容区与品牌原色图标。设计依据见 [界面规范](docs/ui-guidelines.md)。
+启动自动恢复登录；首次使用或会话过期时显示独立登录页。密码不保存，access token 仅在 Go 内存，refresh token 存入系统凭据库。账号昵称来自用户资料，左下角头像打开账号弹层。默认窗口 880 × 640，最小 820 × 600。Key 仅在 Go 内存与用户确认写入的客户端文件/备份中存在，前端只获得掩码。永久配置的备份可能含原有凭据，按私密文件保存。macOS 使用 Security.framework 钥匙串，Windows 使用 Credential Manager，Windows 尚未实机验证。网页预览仅记住本地开发会话 ID（8 小时、服务重启失效）和账号名，不保存密码或网关令牌。
+
+开发 API 只用于 UI 和配置操作，不转发模型推理；桌面包使用原生 Wails Service，复用同一套 API 与配置逻辑，无需运行外部开发服务。测试模式必须显式指定目录：
+
+```sh
+# 真实网关 + 测试配置目录
+ go run ./cmd/connect-dev --fixture-dir /private/tmp/connect-fixture
+# 离线接口夹具 + 测试目录（不访问真实网关）
+ go run ./cmd/connect-dev --fixture-dir /private/tmp/connect-fixture --mock
+# 配置安全测试和前端构建
+ make test
+```
+
+两种测试模式都在主页明确标记“测试目录模式”。真实操作前请核对变更预览中的目标路径。本轮实现范围、接口契约及验证记录见 [API 与配置接入](docs/api-configuration-implementation.md)。
 
 tf-cli 已作为本地临时参考克隆到 `.references/tf-cli/`，整个 `.references/` 被 Git 忽略，不是子模块或项目依赖。首次克隆可用：
 
@@ -176,3 +194,5 @@ git clone --depth 1 https://github.com/TokenFlux/tf-cli.git .references/tf-cli
 本项目尚未确定许可证。当前界面采用 Kumo、Phosphor Icons 与 Lobe Icons，来源与许可见 [第三方声明](THIRD_PARTY_NOTICES.md)。tf-cli 为 Apache-2.0，CC Switch 为 MIT；后续采用代码时记录来源、版本和修改，并保留适用的许可与版权声明。其他候选项目的许可与复用边界见调研文档。
 
 Wails 外壳审计、已修复项与发行前缺项见 [Wails 排查报告](docs/wails-audit.md)。
+
+实际功能接入前的方案见 [配置与恢复流程](docs/configuration-workflows.md) 和 [Codex / Desktop 适配](docs/codex-desktop-adaptation.md)。

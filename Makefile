@@ -26,3 +26,10 @@ package-mac: icons
 	mkdir -p "bin/SurplusToken Connect.app/Contents/Resources"
 	cp build/darwin/AppIcon.icns "bin/SurplusToken Connect.app/Contents/Resources/"
 	cp build/darwin/Info.plist "bin/SurplusToken Connect.app/Contents/Info.plist"
+
+.PHONY: api-dev test
+api-dev:
+	go run ./cmd/connect-dev
+test:
+	go test -race ./internal/...
+	npm --prefix frontend run build
